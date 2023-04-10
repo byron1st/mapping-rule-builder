@@ -1,17 +1,58 @@
 <script lang="ts">
+	import { get } from 'svelte/store';
+	import { createQuery } from '@tanstack/svelte-query';
+	import { projectStore, dbUrlStore, dbUrlStorageKey } from '$lib/store';
+	import type { Project } from '$lib/model';
+	import CircleStack from '$lib/icons/CircleStack.svelte';
+	import IconButton from '$lib/components/IconButton.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
+	import ProjectsListItem from '$lib/components/ProjectsListItem.svelte';
+	import Loading from '$lib/components/Loading.svelte';
+	import Error from '$lib/components/Error.svelte';
 
-	// TODO: sarex CLI 도구의 config 파일에서 DB url 가져오기
+	let selectedProject: Project | null = null;
+	$: projectStore.set(selectedProject);
+
+	$: dbUrl = get(dbUrlStore);
+	$: projectsQuery = createQuery<Project[], Error>({
+		queryKey: [dbUrl, 'projects'],
+		queryFn: async () => {
+			const rawResponse = await fetch('/api/projects', { headers: { dbUrl: dbUrl ?? '' } });
+			const response = await rawResponse.json();
+			if (!rawResponse.ok) throw new Error(response.message);
+
+			return response;
+		},
+		enabled: Boolean(dbUrl)
+	});
+
+	function openDBConfig() {
+		const dbUrl = prompt('Type DB url');
+		if (dbUrl) {
+			dbUrlStore.set(dbUrl);
+			localStorage.setItem(dbUrlStorageKey, dbUrl);
+		}
+	}
 </script>
 
 <Sidebar>
-	<p slot="toolbar">Tool bar</p>
+	<div slot="toolbar" class="flex flex-row items-center">
+		<IconButton onClick={openDBConfig} icon={CircleStack} />
+	</div>
 
 	<div>
-		<p>Projects</p>
-		<p>Projects</p>
-		<p>Projects</p>
-		<p>Projects</p>
-		<p>Projects</p>
+		{#if $projectsQuery.isLoading}
+			<Loading />
+		{:else if $projectsQuery.isError}
+			<Error error={$projectsQuery.error.message} />
+		{:else if $projectsQuery.isSuccess}
+			{#each $projectsQuery.data as project}
+				<ProjectsListItem
+					{project}
+					selected={selectedProject?._id === project._id}
+					onClick={() => (selectedProject = project)}
+				/>
+			{/each}
+		{/if}
 	</div>
 </Sidebar>

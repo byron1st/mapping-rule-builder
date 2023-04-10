@@ -1,7 +1,7 @@
 module.exports = {
 	root: true,
 	parser: '@typescript-eslint/parser',
-	extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'prettier', 'plugin:tailwindcss/recommended'],
+	extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'plugin:prettier/recommended', 'plugin:tailwindcss/recommended'],
 	plugins: ['svelte3', '@typescript-eslint'],
 	ignorePatterns: ['*.cjs'],
 	overrides: [{ files: ['*.svelte'], processor: 'svelte3/svelte3' }],
