@@ -36,7 +36,8 @@
 </script>
 
 <Sidebar>
-	<div slot="toolbar" class="flex flex-row items-center">
+	<div slot="toolbar" class="flex w-full flex-row items-center justify-between px-2">
+		<h1 class="text-sm font-bold">Projects</h1>
 		<IconButton onClick={openDBConfig} icon={CircleStack} />
 	</div>
 
