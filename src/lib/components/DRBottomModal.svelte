@@ -1,23 +1,26 @@
 <script lang="ts">
 	import { fade, slide } from 'svelte/transition';
 	import { createQuery } from '@tanstack/svelte-query';
-	import { dbUrl, project } from '$lib/store';
-	import type { DependencyRelation } from '$lib/model';
+	import { dbUrl } from '$lib/store';
+	import type { DependencyRelation, Project } from '$lib/model';
 	import DrItem from '$lib/components/DRItem.svelte';
 
+	export let project: Project | null = null;
 	export let show: boolean;
 	export let onSelect: (relation: DependencyRelation) => void;
 
 	$: relationsQuery = createQuery<DependencyRelation[], Error>({
-		queryKey: [$dbUrl, $project?._id, 'projects'],
+		queryKey: [$dbUrl, project?._id, 'projects'],
 		queryFn: async () => {
-			const rawResponse = await fetch('/api/relations', { headers: { dbUrl: $dbUrl ?? '' } });
+			const rawResponse = await fetch(`/api/relations?projectId=${project?._id ?? ''}`, {
+				headers: { dbUrl: $dbUrl ?? '' }
+			});
 			const response = await rawResponse.json();
 			if (!rawResponse.ok) throw new Error(response.message);
 
 			return response;
 		},
-		enabled: Boolean(dbUrl && project)
+		enabled: Boolean($dbUrl && project)
 	});
 </script>
 
@@ -37,9 +40,15 @@
 		<h1 class="text-lg font-bold">Dependency Relations from SC to EL</h1>
 
 		{#if $relationsQuery.isSuccess}
-			{#each $relationsQuery.data as relation}
-				<DrItem {relation} onSelect={() => onSelect(relation)} />
-			{/each}
+			{#if $relationsQuery.data.length === 0}
+				<div class="flex h-full flex-col items-center justify-center">
+					<h1 class="text-sm text-gray-500">No dependency relations</h1>
+				</div>
+			{:else}
+				{#each $relationsQuery.data as relation}
+					<DrItem {relation} onSelect={() => onSelect(relation)} />
+				{/each}
+			{/if}
 		{/if}
 	</div>
 {/if}

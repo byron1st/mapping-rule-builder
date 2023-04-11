@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createQuery } from '@tanstack/svelte-query';
-	import { project, dbUrl, dbUrlStorageKey } from '$lib/store';
+	import { dbUrl, dbUrlStorageKey } from '$lib/store';
 	import type { Project } from '$lib/model';
 	import CircleStack from '$lib/icons/CircleStack.svelte';
 	import IconButton from '$lib/components/IconButton.svelte';
@@ -8,9 +8,9 @@
 	import ProjectsListItem from '$lib/components/ProjectsListItem.svelte';
 	import Loading from '$lib/components/Loading.svelte';
 	import Error from '$lib/components/Error.svelte';
+	import MappingRulesList from '$lib/components/MappingRulesList.svelte';
 
 	let selectedProject: Project | null = null;
-	$: project.set(selectedProject);
 
 	$: projectsQuery = createQuery<Project[], Error>({
 		queryKey: [$dbUrl, 'projects'],
@@ -33,25 +33,29 @@
 	}
 </script>
 
-<Sidebar>
-	<div slot="toolbar" class="flex w-full flex-row items-center justify-between px-2">
-		<h1 class="text-sm font-bold">Projects</h1>
-		<IconButton onClick={openDBConfig} icon={CircleStack} />
-	</div>
+<div class="flex w-48 flex-col border-r border-r-slate-900/10">
+	<Sidebar>
+		<div slot="toolbar" class="flex w-full flex-row items-center justify-between px-2">
+			<h1 class="text-sm font-bold">Projects</h1>
+			<IconButton onClick={openDBConfig} icon={CircleStack} />
+		</div>
 
-	<div>
-		{#if $projectsQuery.isLoading}
-			<Loading />
-		{:else if $projectsQuery.isError}
-			<Error error={$projectsQuery.error.message} />
-		{:else if $projectsQuery.isSuccess}
-			{#each $projectsQuery.data as project}
-				<ProjectsListItem
-					{project}
-					selected={selectedProject?._id === project._id}
-					onClick={() => (selectedProject = project)}
-				/>
-			{/each}
-		{/if}
-	</div>
-</Sidebar>
+		<div>
+			{#if $projectsQuery.isLoading}
+				<Loading />
+			{:else if $projectsQuery.isError}
+				<Error error={$projectsQuery.error.message} />
+			{:else if $projectsQuery.isSuccess}
+				{#each $projectsQuery.data as project}
+					<ProjectsListItem
+						{project}
+						selected={selectedProject?._id === project._id}
+						onClick={() => (selectedProject = project)}
+					/>
+				{/each}
+			{/if}
+		</div>
+	</Sidebar>
+</div>
+
+<MappingRulesList bind:project={selectedProject} />

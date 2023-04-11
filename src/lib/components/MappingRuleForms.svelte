@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { DependencyRelation } from '$lib/model';
+	import type { DependencyRelation, MappingRule, Project } from '$lib/model';
 	import Plus from '$lib/icons/Plus.svelte';
 	import IconButton from '$lib/components/IconButton.svelte';
 	import Toolbar from '$lib/components/Toolbar.svelte';
@@ -8,7 +8,20 @@
 	import MappingRuleFormInput from '$lib/components/MappingRuleFormInput.svelte';
 	import DrBottomModal from '$lib/components/DRBottomModal.svelte';
 	import DrItem from '$lib/components/DRItem.svelte';
-	import { project } from '$lib/store';
+	import { dbUrl } from '$lib/store';
+	import { getContext } from 'svelte';
+	import type { CreateQueryResult } from '@tanstack/svelte-query';
+
+	export let project: Project | null = null;
+	export let mappingRule: MappingRule | null = null;
+	$: {
+		relation = mappingRule?.relation ?? undefined;
+		connectorType = mappingRule?.connectorType ?? '';
+		sourceSchema = mappingRule?.sourceComponentIdentifierSchema ?? [];
+		targetSchema = mappingRule?.targetComponentIdentifierSchema ?? [];
+	}
+
+	let mappingRulesQuery = getContext<CreateQueryResult<MappingRule[], Error>>('mappingRulesQuery');
 
 	let relation: DependencyRelation | undefined = undefined;
 	let showProcedureModal = false;
@@ -55,15 +68,87 @@
 		targetSchema.splice(index, 1);
 		targetSchema = [...targetSchema];
 	}
+
+	async function createMappingRule() {
+		const rawResponse = await fetch('/api/mappingrules', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				dbUrl: $dbUrl ?? ''
+			},
+			body: JSON.stringify({
+				projectId: project?._id ?? '',
+				relationId: relation?._id ?? '',
+				connectorType,
+				sourceComponentIdentifierSchema: sourceSchema,
+				targetComponentIdentifierSchema: targetSchema
+			})
+		});
+
+		const response = await rawResponse.json();
+		if (!rawResponse.ok) throw new Error(response.message);
+
+		mappingRule = response;
+		$mappingRulesQuery.refetch();
+	}
+
+	async function updateMappingRule() {
+		const rawResponse = await fetch(`/api/mappingrules/${mappingRule?._id ?? ''}`, {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+				dbUrl: $dbUrl ?? ''
+			},
+			body: JSON.stringify({
+				_id: mappingRule?._id ?? '',
+				projectId: project?._id ?? '',
+				relationId: relation?._id ?? '',
+				connectorType,
+				sourceComponentIdentifierSchema: sourceSchema,
+				targetComponentIdentifierSchema: targetSchema
+			})
+		});
+
+		const response = await rawResponse.json();
+		if (!rawResponse.ok) throw new Error(response.message);
+
+		mappingRule = response;
+		$mappingRulesQuery.refetch();
+	}
+
+	async function deleteMappingRule() {
+		const rawResponse = await fetch(`/api/mappingrules/${mappingRule?._id ?? ''}`, {
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json',
+				dbUrl: $dbUrl ?? ''
+			}
+		});
+
+		const response = await rawResponse.json();
+		if (!rawResponse.ok) throw new Error(response.message);
+
+		mappingRule = null;
+		$mappingRulesQuery.refetch();
+	}
 </script>
 
 <Toolbar>
 	<div class="flex w-full flex-row">
-		<IconButton onClick={() => {}} icon={Plus} />
+		<IconButton
+			onClick={() => {
+				mappingRule = null;
+			}}
+			icon={Plus}
+		/>
 	</div>
 </Toolbar>
 
-{#if $project}
+{#if !$dbUrl || !project}
+	<div class="flex h-full flex-col items-center justify-center">
+		<h1 class="text-sm text-gray-500">Select a project</h1>
+	</div>
+{:else}
 	<div class="flex flex-col gap-6 p-2">
 		<MappingRuleForm id="procedure-input" label="Procedure">
 			<MappingRuleFormInput
@@ -115,7 +200,21 @@
 				{/each}
 			</div>
 		</MappingRuleForm>
+
+		<div class="flex w-full flex-row justify-between">
+			<button
+				class="h-6 rounded bg-blue-500 px-2 text-white active:bg-blue-700"
+				on:click={mappingRule ? updateMappingRule : createMappingRule}
+				>{mappingRule ? 'Update' : 'Create'}</button
+			>
+			{#if mappingRule}
+				<button
+					class="h-6 rounded px-2 text-red-500 active:text-red-700"
+					on:click={deleteMappingRule}>Delete</button
+				>
+			{/if}
+		</div>
 	</div>
 
-	<DrBottomModal bind:show={showProcedureModal} onSelect={selectRelation} />
+	<DrBottomModal bind:project bind:show={showProcedureModal} onSelect={selectRelation} />
 {/if}
