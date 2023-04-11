@@ -10,3 +10,8 @@ export type MappingRule = {
 	sourceComponentIdentifierSchema: string[];
 	targetComponentIdentifierSchema: string[];
 } & Document;
+
+export type DependencyRelation = {
+	source: string;
+	target: string;
+} & Document;
