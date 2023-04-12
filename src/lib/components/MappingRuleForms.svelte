@@ -85,9 +85,23 @@
 
 		mappingRule = response;
 		await refetchMappingRules();
+		alert('A mapping rule has been created successfully!');
+	}
+
+	function checkIfChanged() {
+		if (!mappingRule) return true;
+
+		if (mappingRule.relation._id !== relation?._id) return true;
+		if (mappingRule.connectorType !== connectorType) return true;
+		if (mappingRule.sourceComponentIdentifierSchema !== sourceSchema) return true;
+		if (mappingRule.targetComponentIdentifierSchema !== targetSchema) return true;
+
+		return false;
 	}
 
 	async function updateMappingRule() {
+		if (!checkIfChanged()) return;
+
 		const rawResponse = await fetch(`/api/mappingrules/${mappingRule?._id ?? ''}`, {
 			method: 'PUT',
 			headers: {
@@ -109,9 +123,13 @@
 
 		mappingRule = response;
 		await refetchMappingRules();
+		alert('A mapping rule has been updated successfully!');
 	}
 
 	async function deleteMappingRule() {
+		let confirmed = confirm('Are you sure you want to delete this mapping rule?');
+		if (!confirmed) return;
+
 		const rawResponse = await fetch(`/api/mappingrules/${mappingRule?._id ?? ''}`, {
 			method: 'DELETE',
 			headers: {
