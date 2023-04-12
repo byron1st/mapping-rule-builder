@@ -14,9 +14,6 @@ export const PUT = (async ({ request, params }) => {
 	let newMappingRule: MappingRule;
 	try {
 		newMappingRule = await request.json();
-		if (!newMappingRule._id || params.mapping_rule_id !== newMappingRule._id) {
-			throw new Error('Missing or wrong _id');
-		}
 	} catch (err) {
 		throw logAndThrowError('Wrong request body', err, 400);
 	}
@@ -24,11 +21,11 @@ export const PUT = (async ({ request, params }) => {
 	try {
 		const mappingRulesCol = await getCol<MappingRule>(dbUrl, 'mappingrules');
 		await mappingRulesCol.updateOne(
-			{ _id: new ObjectId(newMappingRule._id) },
+			{ _id: new ObjectId(params.mapping_rule_id) },
 			{ $set: newMappingRule }
 		);
 
-		return json(newMappingRule);
+		return json({ ...newMappingRule, _id: params.mapping_rule_id });
 	} catch (err) {
 		throw logAndThrowError('Failed to put an existing mapping rule', err);
 	}

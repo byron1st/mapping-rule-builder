@@ -27,7 +27,9 @@
 		},
 		enabled: Boolean($dbUrl && project)
 	});
-	setContext('mappingRulesQuery', mappingRulesQuery);
+	$: setContext('refetchMappingRules', async () => {
+		await $mappingRulesQuery.refetch();
+	});
 </script>
 
 <div class="flex w-64 flex-col border-r border-r-slate-900/10">

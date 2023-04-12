@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { getContext } from 'svelte';
 	import type { DependencyRelation, MappingRule, Project } from '$lib/model';
 	import Plus from '$lib/icons/Plus.svelte';
 	import IconButton from '$lib/components/IconButton.svelte';
@@ -9,19 +10,12 @@
 	import DrBottomModal from '$lib/components/DRBottomModal.svelte';
 	import DrItem from '$lib/components/DRItem.svelte';
 	import { dbUrl } from '$lib/store';
-	import { getContext } from 'svelte';
-	import type { CreateQueryResult } from '@tanstack/svelte-query';
 
 	export let project: Project | null = null;
 	export let mappingRule: MappingRule | null = null;
-	$: {
-		relation = mappingRule?.relation ?? undefined;
-		connectorType = mappingRule?.connectorType ?? '';
-		sourceSchema = mappingRule?.sourceComponentIdentifierSchema ?? [];
-		targetSchema = mappingRule?.targetComponentIdentifierSchema ?? [];
-	}
+	let mappingRuleId: string | null = null;
 
-	let mappingRulesQuery = getContext<CreateQueryResult<MappingRule[], Error>>('mappingRulesQuery');
+	let refetchMappingRules = getContext<() => Promise<void>>('refetchMappingRules');
 
 	let relation: DependencyRelation | undefined = undefined;
 	let showProcedureModal = false;
@@ -78,7 +72,8 @@
 			},
 			body: JSON.stringify({
 				projectId: project?._id ?? '',
-				relationId: relation?._id ?? '',
+				procedure: relation?.source ?? '',
+				relation,
 				connectorType,
 				sourceComponentIdentifierSchema: sourceSchema,
 				targetComponentIdentifierSchema: targetSchema
@@ -89,7 +84,7 @@
 		if (!rawResponse.ok) throw new Error(response.message);
 
 		mappingRule = response;
-		$mappingRulesQuery.refetch();
+		await refetchMappingRules();
 	}
 
 	async function updateMappingRule() {
@@ -100,9 +95,9 @@
 				dbUrl: $dbUrl ?? ''
 			},
 			body: JSON.stringify({
-				_id: mappingRule?._id ?? '',
 				projectId: project?._id ?? '',
-				relationId: relation?._id ?? '',
+				procedure: relation?.source ?? '',
+				relation,
 				connectorType,
 				sourceComponentIdentifierSchema: sourceSchema,
 				targetComponentIdentifierSchema: targetSchema
@@ -113,7 +108,7 @@
 		if (!rawResponse.ok) throw new Error(response.message);
 
 		mappingRule = response;
-		$mappingRulesQuery.refetch();
+		await refetchMappingRules();
 	}
 
 	async function deleteMappingRule() {
@@ -129,18 +124,33 @@
 		if (!rawResponse.ok) throw new Error(response.message);
 
 		mappingRule = null;
-		$mappingRulesQuery.refetch();
+		resetFields();
+		await refetchMappingRules();
+	}
+
+	$: {
+		if (mappingRule && mappingRuleId !== mappingRule._id) {
+			mappingRuleId = mappingRule._id;
+			relation = mappingRule.relation;
+			connectorType = mappingRule.connectorType;
+			sourceSchema = mappingRule.sourceComponentIdentifierSchema;
+			targetSchema = mappingRule.targetComponentIdentifierSchema;
+		}
+	}
+
+	function resetFields() {
+		mappingRule = null;
+		mappingRuleId = null;
+		relation = undefined;
+		connectorType = '';
+		sourceSchema = [];
+		targetSchema = [];
 	}
 </script>
 
 <Toolbar>
 	<div class="flex w-full flex-row">
-		<IconButton
-			onClick={() => {
-				mappingRule = null;
-			}}
-			icon={Plus}
-		/>
+		<IconButton onClick={resetFields} icon={Plus} />
 	</div>
 </Toolbar>
 
