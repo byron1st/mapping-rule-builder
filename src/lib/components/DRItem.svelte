@@ -1,12 +1,18 @@
 <script lang="ts">
+	import classnames from 'classnames';
 	import type { DependencyRelation } from '$lib/model';
 
 	export let relation: DependencyRelation;
-	export let onSelect: (() => void) | undefined = undefined;
+	export let onSelect: ((e: MouseEvent) => void) | undefined = undefined;
+	export let selectedRelations: DependencyRelation[] = [];
+	$: selected = selectedRelations.find((r) => r._id === relation._id) !== undefined;
 </script>
 
 <button
-	class="flex w-full flex-col rounded border border-slate-200 p-2 shadow active:bg-slate-100"
+	class={classnames(
+		'flex w-full flex-col rounded border border-slate-200 p-2 shadow active:bg-slate-100',
+		{ 'bg-slate-100': selected }
+	)}
 	on:click={onSelect}
 >
 	<div class="flex flex-row items-center gap-1">

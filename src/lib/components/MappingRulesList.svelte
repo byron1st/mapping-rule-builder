@@ -14,6 +14,10 @@
 
 	let selectedMappingRule: MappingRule | null = null;
 
+	setContext('selectMappingRule', (mappingRule: MappingRule) => {
+		selectedMappingRule = mappingRule;
+	});
+
 	$: mappingRulesQuery = createQuery<MappingRule[], Error>({
 		queryKey: [$dbUrl, project?._id, 'mappingrules'],
 		queryFn: async () => {
@@ -76,6 +80,13 @@
 	</Sidebar>
 </div>
 
-<div class="flex flex-1 flex-col bg-white">
+<div id="forms" class="flex flex-1 flex-col overflow-y-auto bg-white">
 	<MappingRuleForms bind:project bind:mappingRule={selectedMappingRule} />
 </div>
+
+<style>
+	#forms {
+		/* padding top/bottom 1rem, Toolbar 3rem */
+		height: calc(100vh - 4rem);
+	}
+</style>
