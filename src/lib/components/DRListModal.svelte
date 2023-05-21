@@ -3,11 +3,17 @@
 	import { createQuery } from '@tanstack/svelte-query';
 	import { dbUrl } from '$lib/store';
 	import type { DependencyRelation, Project } from '$lib/model';
-	import DrItem from '$lib/components/DRItem.svelte';
+	import DRItem from '$lib/components/DRItem.svelte';
+	import IconButton from '$lib/components/IconButton.svelte';
+	import XMark from '$lib/icons/XMark.svelte';
 
 	export let project: Project | null = null;
 	export let show: boolean;
 	export let onSelect: (relation: DependencyRelation) => void;
+
+	function closeModal() {
+		show = false;
+	}
 
 	$: relationsQuery = createQuery<DependencyRelation[], Error>({
 		queryKey: [$dbUrl, project?._id, 'projects'],
@@ -28,16 +34,20 @@
 	<div
 		class="fixed top-0 h-full w-full bg-slate-800/10"
 		transition:fade={{ duration: 200 }}
-		on:click={() => (show = false)}
+		on:click={closeModal}
 		on:keydown|preventDefault
 	/>
 
 	<div
 		id="modal"
-		class="fixed bottom-0 flex h-80 flex-col gap-2 overflow-y-auto bg-white p-2"
+		class="fixed right-0 top-12 flex flex-col gap-2 overflow-y-auto bg-white p-2"
 		transition:slide={{ duration: 200 }}
 	>
-		<h1 class="text-lg font-bold">Dependency Relations from SC to EL</h1>
+		<div class="flex flex-row items-center justify-between">
+			<h1 class="text-lg font-bold">Dependency Relations from SC to EL</h1>
+
+			<IconButton icon={XMark} onClick={closeModal} />
+		</div>
 
 		{#if $relationsQuery.isSuccess}
 			{#if $relationsQuery.data.length === 0}
@@ -46,7 +56,7 @@
 				</div>
 			{:else}
 				{#each $relationsQuery.data as relation}
-					<DrItem {relation} onSelect={() => onSelect(relation)} />
+					<DRItem {relation} onSelect={() => onSelect(relation)} />
 				{/each}
 			{/if}
 		{/if}
@@ -55,6 +65,7 @@
 
 <style>
 	#modal {
-		width: calc(100vw - 28rem);
+		height: calc(100vh - 3rem);
+		max-width: calc(100vw - 192px - 256px);
 	}
 </style>

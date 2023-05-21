@@ -7,8 +7,8 @@
 	import MappingRuleForm from '$lib/components/MappingRuleForm.svelte';
 	import SchemaElement from '$lib/components/SchemaElement.svelte';
 	import MappingRuleFormInput from '$lib/components/MappingRuleFormInput.svelte';
-	import DrBottomModal from '$lib/components/DRBottomModal.svelte';
-	import DrItem from '$lib/components/DRItem.svelte';
+	import DRListModal from '$lib/components/DRListModal.svelte';
+	import DRItem from '$lib/components/DRItem.svelte';
 	import { dbUrl } from '$lib/store';
 
 	export let project: Project | null = null;
@@ -187,7 +187,7 @@
 				disabled={showProcedureModal}
 			/>
 			{#if relation}
-				<DrItem {relation} />
+				<DRItem {relation} />
 			{/if}
 		</MappingRuleForm>
 
@@ -244,5 +244,5 @@
 		</div>
 	</div>
 
-	<DrBottomModal bind:project bind:show={showProcedureModal} onSelect={selectRelation} />
+	<DRListModal bind:project bind:show={showProcedureModal} onSelect={selectRelation} />
 {/if}
