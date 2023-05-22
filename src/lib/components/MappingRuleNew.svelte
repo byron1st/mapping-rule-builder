@@ -91,6 +91,13 @@
 			} been created successfully!`
 		);
 	}
+
+	function resetFields() {
+		relations = [];
+		connectorType = '';
+		sourceSchema = [];
+		targetSchema = [];
+	}
 </script>
 
 <div class="flex flex-col gap-6 p-2">
@@ -151,6 +158,10 @@
 		<button
 			class="h-6 rounded bg-blue-500 px-2 text-white active:bg-blue-700"
 			on:click={createMappingRule}>Create</button
+		>
+		<button
+			class="h-6 rounded bg-gray-500 px-2 text-white active:bg-gray-700"
+			on:click={resetFields}>Cancel</button
 		>
 	</div>
 </div>

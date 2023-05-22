@@ -11,25 +11,52 @@
 	export let show: boolean;
 	export let onSelect: (relations: DependencyRelation[]) => void;
 	export let multiSelect = false;
-	export let showSelectButton = false;
 
+	let showSelectButton = false;
+	let multiSelectMode = false;
 	let selectedRelations: DependencyRelation[] = [];
+	$: selectedIds = selectedRelations.map((r) => r._id as string);
 
 	function closeModal() {
 		show = false;
 	}
 
-	function onSelectItem(relation: DependencyRelation): (e: MouseEvent) => void {
+	function onSelectItem(relation: DependencyRelation, index: number): (e: MouseEvent) => void {
 		return (e) => {
-			if (multiSelect && e.shiftKey) {
+			if (multiSelect && multiSelectMode) {
 				if (!showSelectButton) showSelectButton = true;
-				selectedRelations = !selected(relation)
-					? [...selectedRelations, relation]
-					: [...selectedRelations.filter((r) => r._id !== relation._id)];
+
+				if (selected(relation)) {
+					selectedRelations = [...selectedRelations.filter((r) => r._id !== relation._id)];
+				} else if (e.shiftKey) {
+					if (!$relationsQuery.data) return;
+
+					const closestIndex = getClosestIndex(index);
+					if (closestIndex === -1) return;
+
+					selectedRelations = [
+						...selectedRelations,
+						...$relationsQuery.data
+							.slice(closestIndex, index + 1)
+							.filter((r) => !selectedIds.includes(r._id as string))
+					];
+				} else {
+					selectedRelations = [...selectedRelations, relation];
+				}
 			} else {
 				onSelect([relation]);
 			}
 		};
+	}
+
+	function getClosestIndex(index: number): number {
+		return selectedRelations.reduce((lastIndex: number, relation) => {
+			const relationIndex = $relationsQuery.data?.findIndex((r) => r._id === relation._id);
+			if (relationIndex === undefined || relationIndex >= index || relationIndex <= lastIndex) {
+				return lastIndex;
+			}
+			return relationIndex;
+		}, -1);
 	}
 
 	function onSelectMultipleRelations() {
@@ -43,6 +70,11 @@
 	function cancelSelect() {
 		selectedRelations = [];
 		showSelectButton = false;
+	}
+
+	function toggleMultiSelectionMode() {
+		multiSelectMode = !multiSelectMode;
+		if (!multiSelectMode) cancelSelect();
 	}
 
 	$: relationsQuery = createQuery<DependencyRelation[], Error>({
@@ -79,26 +111,41 @@
 			<IconButton icon={XMark} onClick={closeModal} />
 		</div>
 
-		<div class="flex flex-row justify-end gap-2">
-			{#if showSelectButton}
-				<button
-					class="h-6 rounded bg-gray-500 px-2 text-white active:bg-gray-700"
-					on:click={cancelSelect}
-					transition:fade={{ duration: 200 }}
-				>
-					Cancel
-				</button>
-				<button
-					class="h-6 rounded bg-blue-500 px-2 text-white active:bg-blue-700"
-					on:click={onSelectMultipleRelations}
-					transition:fade={{ duration: 200 }}
-				>
-					Create
-				</button>
-			{:else}
-				<div class="h-6" />
-			{/if}
-		</div>
+		{#if multiSelect}
+			<div class="flex flex-row justify-between gap-2">
+				<div class="flex flex-row items-end gap-1">
+					<button
+						class="h-6 rounded bg-gray-500 px-2 text-white active:bg-gray-700"
+						on:click={toggleMultiSelectionMode}
+					>
+						Turn {multiSelectMode ? 'off' : 'on'} Multi-selection
+					</button>
+
+					{#if multiSelectMode && selectedRelations.length > 0}
+						<p class="text-sm">{selectedRelations.length} selected</p>
+					{/if}
+				</div>
+
+				{#if showSelectButton}
+					<div class="flex flex-row gap-2">
+						<button
+							class="h-6 rounded bg-gray-500 px-2 text-white active:bg-gray-700"
+							on:click={cancelSelect}
+						>
+							Cancel
+						</button>
+						<button
+							class="h-6 rounded bg-blue-500 px-2 text-white active:bg-blue-700"
+							on:click={onSelectMultipleRelations}
+						>
+							Create
+						</button>
+					</div>
+				{:else}
+					<div class="h-6" />
+				{/if}
+			</div>
+		{/if}
 
 		<div id="list" class="flex flex-col gap-2 overflow-y-auto">
 			{#if $relationsQuery.isSuccess}
@@ -107,8 +154,13 @@
 						<h1 class="text-sm text-gray-500">No dependency relations</h1>
 					</div>
 				{:else}
-					{#each $relationsQuery.data as relation}
-						<DRItem {relation} onSelect={onSelectItem(relation)} {selectedRelations} />
+					{#each $relationsQuery.data as relation, index}
+						<DRItem
+							{relation}
+							onSelect={onSelectItem(relation, index)}
+							{selectedRelations}
+							{multiSelectMode}
+						/>
 					{/each}
 				{/if}
 			{/if}
