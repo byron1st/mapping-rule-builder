@@ -71,7 +71,7 @@
 	<div
 		id="modal"
 		class="fixed right-0 top-12 flex flex-col gap-2 bg-white p-2"
-		transition:slide={{ duration: 200 }}
+		transition:slide={{ duration: 200, axis: 'x' }}
 	>
 		<div class="flex flex-row items-center justify-between">
 			<h1 class="text-lg font-bold">Dependency Relations from SC to EL</h1>
@@ -100,7 +100,7 @@
 			{/if}
 		</div>
 
-		<div id="list" class="overflow-y-auto">
+		<div id="list" class="flex flex-col gap-2 overflow-y-auto">
 			{#if $relationsQuery.isSuccess}
 				{#if $relationsQuery.data.length === 0}
 					<div class="flex h-full flex-col items-center justify-center">
