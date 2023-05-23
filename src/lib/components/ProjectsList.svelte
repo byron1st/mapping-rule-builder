@@ -44,7 +44,7 @@
 			{#if $projectsQuery.isLoading}
 				<Loading />
 			{:else if $projectsQuery.isError}
-				<Error error={$projectsQuery.error.message} />
+				<svelte:component this={Error} error={$projectsQuery.error.message} />
 			{:else if $projectsQuery.isSuccess}
 				{#each $projectsQuery.data as project}
 					<ProjectsListItem
